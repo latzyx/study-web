@@ -237,19 +237,50 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh, Download } from '@element-plus/icons-vue'
+import {onMounted, reactive, ref} from 'vue'
+import {ElMessage} from 'element-plus'
+import {Download, Refresh} from '@element-plus/icons-vue'
+
+// 类型定义
+interface UserItem {
+  id: number
+  username: string
+  realName: string
+}
+interface DepartmentItem {
+  id: number
+  name: string
+}
+interface CourseItem {
+  id: number
+  title: string
+}
+interface TaskItem {
+  id: number
+  title: string
+}
+interface ExportHistoryItem {
+  id: number
+  fileName: string
+  exportType: string
+  fileSize: string
+  createTime: string
+  status: 'completed' | 'processing'
+}
+interface ExportPreview {
+  estimatedCount: number
+  estimatedSize: string
+}
 
 // 导出表单
 const exportForm = reactive({
   type: 'user',
-  userIds: [],
-  departmentIds: [],
-  courseIds: [],
-  taskIds: [],
-  dateRange: null,
-  includeFields: ['baseInfo', 'progress', 'time'],
+  userIds: [] as number[],
+  departmentIds: [] as number[],
+  courseIds: [] as number[],
+  taskIds: [] as number[],
+  dateRange: null as [string, string] | null,
+  includeFields: ['baseInfo', 'progress', 'time'] as string[],
   fileFormat: 'excel'
 })
 
@@ -257,96 +288,96 @@ const exportForm = reactive({
 const exporting = ref(false)
 const loading = ref(false)
 
-// 用户列表
-const userList = ref([
-  { id: 1, username: 'zhangsan', realName: '张三' },
-  { id: 2, username: 'lisi', realName: '李四' },
-  { id: 3, username: 'wangwu', realName: '王五' },
-  { id: 4, username: 'zhaoliu', realName: '赵六' },
-  { id: 5, username: 'sunqi', realName: '孙七' }
-])
-
-// 部门列表
-const departmentList = ref([
-  { id: 1, name: '研发部' },
-  { id: 2, name: '市场部' },
-  { id: 3, name: '销售部' },
-  { id: 4, name: '人事部' },
-  { id: 5, name: '财务部' }
-])
-
-// 课程列表
-const courseList = ref([
-  { id: 1, title: 'Vue3 实战教程' },
-  { id: 2, title: 'React Hooks高级应用' },
-  { id: 3, title: 'Node.js微服务架构' },
-  { id: 4, title: 'TypeScript高级编程' },
-  { id: 5, title: '前端工程化实践' },
-  { id: 6, title: 'CSS3动画与特效' }
-])
-
-// 任务列表
-const taskList = ref([
-  { id: 1, title: 'Vue3进阶学习' },
-  { id: 2, title: 'React基础知识' },
-  { id: 3, title: '前端工程化专题' },
-  { id: 4, title: '移动端开发实战' }
-])
-
-// 导出历史记录
-const exportHistory = ref([
-  {
-    id: 1,
-    fileName: '用户学习记录_20230630.xlsx',
-    exportType: 'user',
-    fileSize: '2.5MB',
-    createTime: '2023-06-30 15:30:45',
-    status: 'completed'
-  },
-  {
-    id: 2,
-    fileName: '研发部学习记录_20230625.xlsx',
-    exportType: 'department',
-    fileSize: '4.8MB',
-    createTime: '2023-06-25 10:15:20',
-    status: 'completed'
-  },
-  {
-    id: 3,
-    fileName: 'Vue3课程学习情况_20230620.csv',
-    exportType: 'course',
-    fileSize: '1.2MB',
-    createTime: '2023-06-20 09:45:12',
-    status: 'completed'
-  },
-  {
-    id: 4,
-    fileName: '前端工程化专题任务完成情况_20230618.pdf',
-    exportType: 'task',
-    fileSize: '3.1MB',
-    createTime: '2023-06-18 16:20:35',
-    status: 'completed'
-  }
-])
+// 数据列表
+const userList = ref<UserItem[]>([])
+const departmentList = ref<DepartmentItem[]>([])
+const courseList = ref<CourseItem[]>([])
+const taskList = ref<TaskItem[]>([])
+const exportHistory = ref<ExportHistoryItem[]>([])
 
 // 预览弹窗
 const previewDialogVisible = ref(false)
-const exportPreview = ref(null)
+const exportPreview = ref<ExportPreview | null>(null)
 
 // 页面加载
 onMounted(() => {
   refreshData()
+  fetchUserList()
+  fetchDepartmentList()
+  fetchCourseList()
+  fetchTaskList()
+  fetchExportHistory()
 })
+
+// 获取用户列表
+async function fetchUserList() {
+  try {
+    // TODO: 替换为实际API
+    // const res = await api.getUserList()
+    // userList.value = res.data
+    userList.value = []
+  } catch (e) {
+    ElMessage.error('获取用户列表失败')
+  }
+}
+// 获取部门列表
+async function fetchDepartmentList() {
+  try {
+    // TODO: 替换为实际API
+    // const res = await api.getDepartmentList()
+    // departmentList.value = res.data
+    departmentList.value = []
+  } catch (e) {
+    ElMessage.error('获取部门列表失败')
+  }
+}
+// 获取课程列表
+async function fetchCourseList() {
+  try {
+    // TODO: 替换为实际API
+    // const res = await api.getCourseList()
+    // courseList.value = res.data
+    courseList.value = []
+  } catch (e) {
+    ElMessage.error('获取课程列表失败')
+  }
+}
+// 获取任务列表
+async function fetchTaskList() {
+  try {
+    // TODO: 替换为实际API
+    // const res = await api.getTaskList()
+    // taskList.value = res.data
+    taskList.value = []
+  } catch (e) {
+    ElMessage.error('获取任务列表失败')
+  }
+}
+// 获取导出历史
+async function fetchExportHistory() {
+  try {
+    // TODO: 替换为实际API
+    // const res = await api.getExportHistory()
+    // exportHistory.value = res.data
+    exportHistory.value = []
+  } catch (e) {
+    ElMessage.error('获取导出历史失败')
+  }
+}
 
 // 刷新数据
 const refreshData = () => {
   loading.value = true
-  
-  // 模拟加载数据
-  setTimeout(() => {
+  Promise.all([
+    fetchUserList(),
+    fetchDepartmentList(),
+    fetchCourseList(),
+    fetchTaskList(),
+    fetchExportHistory()
+  ]).then(() => {
     loading.value = false
     ElMessage.success('数据已刷新')
-  }, 600)
+  })
 }
 
 // 重置表单
@@ -363,173 +394,96 @@ const resetForm = () => {
 
 // 处理导出
 const handleExport = () => {
-  // 验证表单
-  if (!validateExportForm()) {
-    return
-  }
-  
-  // 显示预览
+  if (!validateExportForm()) return
   showExportPreview()
 }
 
 // 验证导出表单
-const validateExportForm = () => {
-  // 验证是否选择了导出对象
+const validateExportForm = (): boolean => {
   if (exportForm.type === 'user' && exportForm.userIds.length === 0) {
     ElMessage.warning('请选择要导出的用户')
     return false
   }
-  
   if (exportForm.type === 'department' && exportForm.departmentIds.length === 0) {
     ElMessage.warning('请选择要导出的部门')
     return false
   }
-  
   if (exportForm.type === 'course' && exportForm.courseIds.length === 0) {
     ElMessage.warning('请选择要导出的课程')
     return false
   }
-  
   if (exportForm.type === 'task' && exportForm.taskIds.length === 0) {
     ElMessage.warning('请选择要导出的任务')
     return false
   }
-  
-  // 验证是否选择了包含内容
   if (exportForm.includeFields.length === 0) {
     ElMessage.warning('请选择至少一项要包含的内容')
     return false
   }
-  
   return true
 }
 
 // 显示导出预览
 const showExportPreview = () => {
-  // 模拟计算数据量
-  let count = 0
-  let size = ''
-  
-  switch (exportForm.type) {
-    case 'user':
-      count = exportForm.userIds.length * 10
-      break
-    case 'department':
-      count = exportForm.departmentIds.length * 30
-      break
-    case 'course':
-      count = exportForm.courseIds.length * 50
-      break
-    case 'task':
-      count = exportForm.taskIds.length * 25
-      break
-  }
-  
-  // 根据包含的字段增加数据量
-  const fieldFactor = 1 + (exportForm.includeFields.length * 0.2)
-  count = Math.round(count * fieldFactor)
-  
-  // 计算大致文件大小
-  const sizeInKB = count * 3
-  if (sizeInKB < 1000) {
-    size = `${sizeInKB}KB`
-  } else {
-    size = `${(sizeInKB / 1024).toFixed(1)}MB`
-  }
-  
+  // TODO: 可调用后端接口获取预估数据量和大小
   exportPreview.value = {
-    estimatedCount: count,
-    estimatedSize: size
+    estimatedCount: 100,
+    estimatedSize: '1MB'
   }
-  
   previewDialogVisible.value = true
 }
 
 // 确认导出
-const confirmExport = () => {
+const confirmExport = async () => {
   previewDialogVisible.value = false
   exporting.value = true
-  
-  // 模拟导出过程
-  setTimeout(() => {
-    exporting.value = false
-    
-    // 创建新的导出记录
-    const now = new Date()
-    const dateStr = now.toISOString().split('T')[0].replace(/-/g, '')
-    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '')
-    
-    let fileName = ''
-    switch (exportForm.type) {
-      case 'user':
-        fileName = `用户学习记录_${dateStr}.${getFileExtension(exportForm.fileFormat)}`
-        break
-      case 'department':
-        fileName = `部门学习记录_${dateStr}.${getFileExtension(exportForm.fileFormat)}`
-        break
-      case 'course':
-        fileName = `课程学习情况_${dateStr}.${getFileExtension(exportForm.fileFormat)}`
-        break
-      case 'task':
-        fileName = `任务完成情况_${dateStr}.${getFileExtension(exportForm.fileFormat)}`
-        break
-    }
-    
-    const newExport = {
-      id: Date.now(),
-      fileName,
-      exportType: exportForm.type,
-      fileSize: exportPreview.value.estimatedSize,
-      createTime: now.toLocaleString('zh-CN', { hour12: false }),
-      status: 'completed'
-    }
-    
-    exportHistory.value.unshift(newExport)
-    
+  try {
+    // TODO: 替换为实际API
+    // const res = await api.exportData(exportForm)
+    // 导出成功后刷新历史
+    await fetchExportHistory()
     ElMessage.success('导出成功，可在导出记录中下载文件')
-  }, 2000)
+  } catch (e) {
+    ElMessage.error('导出失败')
+  } finally {
+    exporting.value = false
+  }
 }
 
 // 处理下载
-const handleDownload = (record) => {
+const handleDownload = (record: ExportHistoryItem) => {
+  // TODO: 替换为实际API
+  // await api.downloadExportFile(record.id)
   ElMessage.success(`正在下载文件: ${record.fileName}`)
 }
 
 // 处理删除导出记录
-const handleDeleteExport = (record) => {
-  ElMessageBox.confirm(
-    `确定要删除导出记录"${record.fileName}"吗？`,
-    '删除确认',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(() => {
-    exportHistory.value = exportHistory.value.filter(item => item.id !== record.id)
+const handleDeleteExport = async (record: ExportHistoryItem) => {
+  try {
+    // TODO: 替换为实际API
+    // await api.deleteExportRecord(record.id)
+    await fetchExportHistory()
     ElMessage.success('导出记录已删除')
-  }).catch(() => {})
+  } catch (e) {
+    ElMessage.error('删除失败')
+  }
 }
 
 // 清空历史记录
-const handleClearHistory = () => {
-  ElMessageBox.confirm(
-    '确定要清空所有导出记录吗？',
-    '清空确认',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(() => {
-    exportHistory.value = []
+const handleClearHistory = async () => {
+  try {
+    // TODO: 替换为实际API
+    // await api.clearExportHistory()
+    await fetchExportHistory()
     ElMessage.success('导出记录已清空')
-  }).catch(() => {})
+  } catch (e) {
+    ElMessage.error('清空失败')
+  }
 }
 
 // 获取导出类型文本
-const getExportTypeText = (type) => {
-  const map = {
+const getExportTypeText = (type: string): string => {
+  const map: Record<string, string> = {
     'user': '按用户',
     'department': '按部门',
     'course': '按课程',
@@ -537,30 +491,27 @@ const getExportTypeText = (type) => {
   }
   return map[type] || '未知'
 }
-
 // 获取文件扩展名
-const getFileExtension = (format) => {
-  const map = {
+const getFileExtension = (format: string): string => {
+  const map: Record<string, string> = {
     'excel': 'xlsx',
     'csv': 'csv',
     'pdf': 'pdf'
   }
   return map[format] || 'xlsx'
 }
-
 // 获取文件格式文本
-const getFileFormatText = (format) => {
-  const map = {
+const getFileFormatText = (format: string): string => {
+  const map: Record<string, string> = {
     'excel': 'Excel 表格',
     'csv': 'CSV 文本文件',
     'pdf': 'PDF 文档'
   }
   return map[format] || '未知'
 }
-
 // 获取包含字段文本
-const getIncludeFieldsText = (fields) => {
-  const map = {
+const getIncludeFieldsText = (fields: string[]): string => {
+  const map: Record<string, string> = {
     'baseInfo': '基本信息',
     'progress': '学习进度',
     'time': '学习时长',
@@ -568,19 +519,15 @@ const getIncludeFieldsText = (fields) => {
     'notes': '学习笔记',
     'comments': '评论内容'
   }
-  
   return fields.map(field => map[field] || field).join('、')
 }
-
 // 获取选择的名称列表
-const getSelectionNames = (list, ids) => {
+const getSelectionNames = (list: Array<any>, ids: number[]): string => {
   if (!ids || ids.length === 0) return '全部'
-  
   const names = ids.map(id => {
-    const item = list.find(item => item.id === id)
+    const item = list.find((item: any) => item.id === id)
     return item ? (item.realName || item.name || item.title) : ''
   }).filter(Boolean)
-  
   if (names.length <= 3) {
     return names.join('、')
   } else {

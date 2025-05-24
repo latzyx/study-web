@@ -1,5 +1,5 @@
 // API 基础配置
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL 
 export const API_PREFIX = '/api/v1'
 
 // HTTP 状态码
@@ -45,36 +45,36 @@ export const PAGINATION = {
 
 // 用户相关接口
 export const USER_API = {
-  BASE: `${API_PREFIX}/users`,
-  LOGIN: `${API_PREFIX}/users/login`,
-  ME: `${API_PREFIX}/users/me`,
-  BATCH_DELETE: `${API_PREFIX}/users/batch-delete`,
-  RESET_PASSWORD: (id: number) => `${API_PREFIX}/users/${id}/reset-password`,
-  UPDATE_STATUS: (id: number) => `${API_PREFIX}/users/${id}/status`,
-  DETAIL: (id: number) => `${API_PREFIX}/users/${id}`
+  BASE: `${API_PREFIX}/user`,
+  LOGIN: `${API_PREFIX}/user/login`,
+  ME: `${API_PREFIX}/user/me`,
+  BATCH_DELETE: `${API_PREFIX}/user/batch-delete`,
+  RESET_PASSWORD: (id: number) => `${API_PREFIX}/user/${id}/reset-password`,
+  UPDATE_STATUS: (id: number) => `${API_PREFIX}/user/${id}/status`,
+  DETAIL: (id: number) => `${API_PREFIX}/user/${id}`
 }
 
 // 角色相关接口
 export const ROLE_API = {
-  BASE: `${API_PREFIX}/roles`,
-  ALL: `${API_PREFIX}/roles/all`,
-  PERMISSIONS: (id: number) => `${API_PREFIX}/roles/${id}/permissions`,
-  DETAIL: (id: number) => `${API_PREFIX}/roles/${id}`
+  BASE: `${API_PREFIX}/role`,
+  ALL: `${API_PREFIX}/role/all`,
+  PERMISSIONS: (id: number) => `${API_PREFIX}/role/${id}/permissions`,
+  DETAIL: (id: number) => `${API_PREFIX}/role/${id}`
 }
 
 // 菜单相关接口
 export const MENU_API = {
-  BASE: `${API_PREFIX}/menus`,
-  TREE: `${API_PREFIX}/menus/tree`,
-  USER: `${API_PREFIX}/menus/user`,
-  SORT: `${API_PREFIX}/menus/sort`,
-  DETAIL: (id: number) => `${API_PREFIX}/menus/${id}`
+  BASE: `${API_PREFIX}/menu`,
+  TREE: `${API_PREFIX}/menu/tree`,
+  USER: `${API_PREFIX}/menu/user`,
+  SORT: `${API_PREFIX}/menu/sort`,
+  DETAIL: (id: number) => `${API_PREFIX}/menu/${id}`
 }
 
 // 权限相关接口
 export const PERMISSION_API = {
-  BASE: `${API_PREFIX}/permissions`,
-  ALL: `${API_PREFIX}/permissions/all`
+  BASE: `${API_PREFIX}/permission`,
+  ALL: `${API_PREFIX}/permission/all`
 }
 
 // 权限类型

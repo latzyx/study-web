@@ -46,10 +46,13 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue";
-import type { FormInstance, FormRules } from "element-plus";
-import { User, Lock } from '@element-plus/icons-vue'
-import { useRouter, useRoute } from 'vue-router'
+import {reactive, ref} from "vue";
+import type {FormInstance, FormRules} from "element-plus";
+import {ElMessage} from 'element-plus'
+import {Lock, User} from '@element-plus/icons-vue'
+import {useRoute, useRouter} from 'vue-router'
+import type {LoginResult} from "@/api/services/userService";
+import {userService} from "@/api/services/userService";
 
 interface LoginForm {
   username: string
@@ -65,11 +68,11 @@ const rememberMe = ref(false)
 const loginRules = reactive<FormRules>({
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 5, message: '长度在 3 到 5 个字符', trigger: 'blur' }
+    { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 10, message: '长度在 6 到 10 个字符', trigger: 'blur' }
+    { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' }
   ]
 })
 
@@ -79,27 +82,55 @@ const loginForm = ref<LoginForm>({
   password: ''
 })
 
+const handleLoginSuccess = (response: LoginResult) => {
+  // 存储token
+  localStorage.setItem('token', response.token)
+  
+  // 如果选择了记住我，可以存储用户名
+  if (rememberMe.value) {
+    localStorage.setItem('rememberedUsername', loginForm.value.username)
+  }
+
+  // 获取重定向路径
+  const redirectPath = route.query.redirect as string
+  router.push(redirectPath || '/home')
+  
+  ElMessage.success('登录成功')
+}
+
 const loginSubmit = async () => {
   if (!loginFormRef.value) return
   
   try {
     loading.value = true
+    
+    // 表单验证
     const valid = await loginFormRef.value.validate()
-    if (valid) {
-      // 模拟登录成功
-      console.log('Login form submitted:', loginForm.value)
-      localStorage.setItem('token', 'dummy-token')
-      
-      // 如果存在重定向参数，登录后跳转到该页面
-      const redirectPath = route.query.redirect as string
-      router.push(redirectPath || '/home')
-    }
-  } catch (error) {
-    console.error('Form validation failed:', error)
+    if (!valid) return
+
+    // 调用登录接口
+    const response = await userService.login(loginForm.value)
+    handleLoginSuccess(response)
+    
+  } catch (error: any) {
+    console.error('Login failed:', error)
+    ElMessage.error(error.message || '登录失败，请重试')
   } finally {
     loading.value = false
   }
 }
+
+// 初始化时检查是否有记住的用户名
+const initRememberedUsername = () => {
+  const rememberedUsername = localStorage.getItem('rememberedUsername')
+  if (rememberedUsername) {
+    loginForm.value.username = rememberedUsername
+    rememberMe.value = true
+  }
+}
+
+// 组件挂载时初始化
+initRememberedUsername()
 </script>
 
 <style>

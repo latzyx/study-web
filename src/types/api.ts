@@ -3,6 +3,7 @@ export interface ApiResponse<T = any> {
   code: number
   data: T
   message: string
+    trace_id: string
 }
 
 // 分页结果类型

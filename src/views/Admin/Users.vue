@@ -70,14 +70,14 @@
         <el-table-column label="操作" width="180">
           <template #default="scope">
             <el-button link type="primary" size="small" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button link type="primary" size="small" @click="handleResetPassword(scope.row)">重置密码</el-button>
+            <el-button link size="small" type="primary" @click="handleResetPassword(scope.row.id)">重置密码</el-button>
             <el-button 
               link 
-              :type="scope.row.status === 'active' ? 'danger' : 'success'" 
+              :type="scope.row.status === USER_STATUS.ACTIVE ? 'danger' : 'success'" 
               size="small" 
-              @click="handleToggleStatus(scope.row)"
+              @click="handleStatusChange(scope.row.id, scope.row.status === USER_STATUS.ACTIVE ? USER_STATUS.INACTIVE : USER_STATUS.ACTIVE)"
             >
-              {{ scope.row.status === 'active' ? '禁用' : '启用' }}
+              {{ scope.row.status === USER_STATUS.ACTIVE ? '禁用' : '启用' }}
             </el-button>
           </template>
         </el-table-column>
@@ -106,7 +106,7 @@
       <el-form
         ref="userFormRef"
         :model="userForm"
-        :rules="userRules"
+        :rules="rules"
         label-width="100px"
       >
         <el-form-item label="用户名" prop="username">
@@ -193,17 +193,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { Plus, Refresh } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox, FormInstance, FormRules } from 'element-plus'
+import {onMounted, reactive, ref} from 'vue'
+import {Plus, Refresh} from '@element-plus/icons-vue'
+import {ElMessage, FormInstance, FormRules} from 'element-plus'
 import AdminLayout from './Layout.vue'
+import type {LoginParams, User} from '@/api/services/userService'
+import {userService} from '@/api/services/userService'
+import type {StatusType} from '@/types/common'
+import {USER_STATUS} from '@/api/constants'
 
 // 搜索表单
 const searchForm = reactive({
   username: '',
   name: '',
   phone: '',
-  status: '',
+  status: undefined as StatusType | undefined,
   department: ''
 })
 
@@ -224,61 +228,30 @@ const roleOptions = [
   { label: '访客', value: 'guest' }
 ]
 
-// 列表数据
+// 用户列表
+const userList = ref<User[]>([])
 const loading = ref(false)
-const userList = ref([
-  {
-    id: 1,
-    username: 'admin',
-    name: '管理员',
-    department: '技术部',
-    phone: '13800138000',
-    email: 'admin@example.com',
-    roles: '系统管理员',
-    status: 'active'
-  },
-  {
-    id: 2,
-    username: 'zhangsan',
-    name: '张三',
-    department: '市场部',
-    phone: '13900139000',
-    email: 'zhangsan@example.com',
-    roles: '部门管理员',
-    status: 'active'
-  },
-  {
-    id: 3,
-    username: 'lisi',
-    name: '李四',
-    department: '人事部',
-    phone: '13700137000',
-    email: 'lisi@example.com',
-    roles: '普通用户',
-    status: 'inactive'
-  }
-])
 
 // 分页
 const currentPage = ref(1)
 const pageSize = ref(10)
-const total = ref(100)
+const total = ref(0)
 
 // 用户表单
 const formType = ref('add') // add 或 edit
 const dialogVisible = ref(false)
 const userFormRef = ref<FormInstance>()
 const userForm = reactive({
-  id: null,
+  id: null as number | null,
   username: '',
   name: '',
   phone: '',
   email: '',
   department: '',
-  roles: [],
+  roles: [] as string[],
   password: '',
   confirmPassword: '',
-  status: 'active'
+  status: USER_STATUS.ACTIVE as StatusType
 })
 
 // 验证密码一致性
@@ -293,34 +266,26 @@ const validatePass = (rule: any, value: string, callback: any) => {
 }
 
 // 表单验证规则
-const userRules = reactive<FormRules>({
+const rules = reactive<FormRules>({
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
     { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
   ],
-  name: [
-    { required: true, message: '请输入姓名', trigger: 'blur' }
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '长度在 6 到 20 个字符', trigger: 'blur' }
   ],
-  phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }
+  confirmPassword: [
+    { required: true, message: '请再次输入密码', trigger: 'blur' },
+    { validator: validatePass, trigger: 'blur' }
   ],
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
   ],
-  department: [
-    { required: true, message: '请选择部门', trigger: 'change' }
-  ],
-  roles: [
-    { required: true, message: '请选择角色', trigger: 'change' }
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能小于6位', trigger: 'blur' }
-  ],
-  confirmPassword: [
-    { required: true, validator: validatePass, trigger: 'blur' }
+  phone: [
+    { required: true, message: '请输入手机号', trigger: 'blur' },
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
   ]
 })
 
@@ -362,12 +327,21 @@ onMounted(() => {
 })
 
 // 获取用户列表
-const fetchUserList = () => {
-  loading.value = true
-  // 这里应该调用API获取用户列表
-  setTimeout(() => {
+const fetchUserList = async () => {
+  try {
+    loading.value = true
+    const response = await userService.getUserList({
+      page: currentPage.value,
+      pageSize: pageSize.value,
+      ...searchForm
+    })
+    userList.value = response.data.list
+    total.value = response.data.total
+  } catch (error: any) {
+    ElMessage.error(error.message || '获取用户列表失败')
+  } finally {
     loading.value = false
-  }, 500)
+  }
 }
 
 // 处理查询
@@ -381,7 +355,7 @@ const resetSearch = () => {
   searchForm.username = ''
   searchForm.name = ''
   searchForm.phone = ''
-  searchForm.status = ''
+  searchForm.status = undefined
   searchForm.department = ''
   handleSearch()
 }
@@ -411,7 +385,7 @@ const handleAdd = () => {
 }
 
 // 编辑用户
-const handleEdit = (row: any) => {
+const handleEdit = (row: User) => {
   formType.value = 'edit'
   resetUserForm()
   Object.assign(userForm, row)
@@ -429,66 +403,92 @@ const resetUserForm = () => {
   userForm.roles = []
   userForm.password = ''
   userForm.confirmPassword = ''
-  userForm.status = 'active'
+  userForm.status = USER_STATUS.ACTIVE as StatusType
 }
 
 // 提交表单
 const submitForm = async () => {
   if (!userFormRef.value) return
   
-  await userFormRef.value.validate(async (valid) => {
-    if (valid) {
-      // 这里应该调用API保存用户
-      console.log('保存用户:', userForm)
-      
-      ElMessage.success(formType.value === 'add' ? '用户创建成功' : '用户信息更新成功')
-      dialogVisible.value = false
-      fetchUserList()
+  try {
+    await userFormRef.value.validate()
+    
+    const userData: Partial<User> = {
+      username: userForm.username,
+      email: userForm.email,
+      roles: userForm.roles,
+      status: userForm.status
     }
-  })
+    
+    if (formType.value === 'add') {
+      const createData: LoginParams & Partial<User> = {
+        ...userData,
+        username: userForm.username,
+        password: userForm.password
+      }
+      await userService.createUser(createData)
+      ElMessage.success('用户创建成功')
+    } else {
+      if (!userForm.id) return
+      await userService.updateUser(userForm.id, userData)
+      ElMessage.success('用户信息更新成功')
+    }
+    
+    dialogVisible.value = false
+    fetchUserList()
+  } catch (error: any) {
+    ElMessage.error(error.message || '操作失败')
+  }
 }
 
-// 处理重置密码
-const handleResetPassword = (row: any) => {
-  currentUser.value = row
-  resetForm.userId = row.id
-  resetForm.password = ''
-  resetForm.confirmPassword = ''
-  resetPasswordVisible.value = true
+// 重置密码
+const handleResetPassword = async (id: number) => {
+  try {
+    await userService.resetUserPassword(id)
+    ElMessage.success('密码重置成功')
+  } catch (error: any) {
+    ElMessage.error(error.message || '密码重置失败')
+  }
+}
+
+// 更新用户状态
+const handleStatusChange = async (id: number, status: StatusType) => {
+  try {
+    if (status === USER_STATUS.ACTIVE) {
+      await userService.enableUser(id)
+    } else {
+      await userService.disableUser(id)
+    }
+    ElMessage.success('状态更新成功')
+    fetchUserList()
+  } catch (error: any) {
+    ElMessage.error(error.message || '状态更新失败')
+  }
+}
+
+// 删除用户
+const handleDelete = async (id: number) => {
+  try {
+    await userService.deleteUser(id)
+    ElMessage.success('删除成功')
+    fetchUserList()
+  } catch (error: any) {
+    ElMessage.error(error.message || '删除失败')
+  }
 }
 
 // 提交重置密码
 const submitResetPassword = async () => {
   if (!resetFormRef.value) return
-  
-  await resetFormRef.value.validate(async (valid) => {
-    if (valid) {
-      // 这里应该调用API重置密码
-      console.log('重置密码:', resetForm)
-      
-      ElMessage.success('密码重置成功')
-      resetPasswordVisible.value = false
-    }
-  })
-}
-
-// 切换用户状态
-const handleToggleStatus = (row: any) => {
-  const action = row.status === 'active' ? '禁用' : '启用'
-  
-  ElMessageBox.confirm(
-    `确定要${action}用户 ${row.name} 吗？`,
-    '提示',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(() => {
-    // 这里应该调用API更新用户状态
-    row.status = row.status === 'active' ? 'inactive' : 'active'
-    ElMessage.success(`${action}成功`)
-  }).catch(() => {})
+  try {
+    await resetFormRef.value.validate()
+    await userService.resetUserPassword(currentUser.value.id)
+    ElMessage.success('密码重置成功')
+    resetPasswordVisible.value = false
+    fetchUserList()
+  } catch (error: any) {
+    ElMessage.error(error.message || '密码重置失败')
+  }
 }
 </script>
 

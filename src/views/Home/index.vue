@@ -55,31 +55,31 @@
         <el-row :gutter="20">
           <el-col :xs="24" :sm="12" :md="8" :lg="6" v-for="video in videoList" :key="video.id" class="video-column">
             <el-card class="video-card" shadow="hover">
-              <div class="video-thumbnail" @click="handleVideoClick(video)">
-                <el-image :src="video.thumbnail" fit="cover"></el-image>
+              <div class="video-thumbnail" @click="goToVideoDetail(video.id)">
+                <el-image :src="video.cover" fit="cover"></el-image>
                 <div class="video-duration">{{ formatDuration(video.duration) }}</div>
-                <div v-if="video.status !== 'not-started'" class="video-progress">
-                  <el-progress 
-                    :percentage="video.progress" 
-                    :status="video.status === 'completed' ? 'success' : ''"
-                    :stroke-width="6"
-                    :show-text="false"
-                  ></el-progress>
-                </div>
               </div>
               <div class="video-info">
-                <h3 class="video-title" @click="handleVideoClick(video)">{{ video.title }}</h3>
+                <h3 class="video-title" @click="goToVideoDetail(video.id)">{{ video.title }}</h3>
                 <div class="video-meta">
                   <span class="video-category">{{ getCategoryLabel(video.category) }}</span>
-                  <span class="video-credits">{{ video.credits }} 学分</span>
-                </div>
-                <div class="video-status">
-                  <el-tag 
-                    :type="getStatusType(video.status)" 
+                  <el-tag
+                      :type="getStatusType(video.status)"
                     size="small"
                   >
-                    {{ getStatusText(video) }}
+                    {{ getStatusText(video.status) }}
                   </el-tag>
+                </div>
+                <div class="video-description">{{ video.description }}</div>
+                <div class="video-footer">
+                  <span class="video-instructor">
+                    <el-icon><User/></el-icon>
+                    {{ video.instructor.name }}
+                  </span>
+                  <span class="video-level">
+                    <el-icon><Star/></el-icon>
+                    {{ video.level }}
+                  </span>
                 </div>
               </div>
             </el-card>
@@ -104,46 +104,50 @@
 </template>
 
 <script setup lang="ts">
-import { ref,  onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import {onMounted, ref} from 'vue'
+import {useRouter} from 'vue-router'
+import type {Course} from '@/api/services/learningService'
+import {LearningService} from '@/api/services/learningService'
+import {ElMessage} from 'element-plus'
 
 const router = useRouter()
+const learningService = new LearningService()
 
 // 统计数据
-const statisticsData = [
+const statisticsData = ref([
   {
     title: '本月观看视频',
-    value: '48 个',
-    description: '比上月增长 12%',
+    value: '0 个',
+    description: '暂无数据',
     icon: 'VideoPlay',
     bgColor: '#e6f7ff',
     iconColor: '#1890ff'
   },
   {
     title: '待完成学习',
-    value: '15 个',
-    description: '剩余约 8 小时',
+    value: '0 个',
+    description: '暂无数据',
     icon: 'Clock',
     bgColor: '#fff7e6',
     iconColor: '#fa8c16'
   },
   {
     title: '总学习时长',
-    value: '124 小时',
-    description: '持续学习 45 天',
+    value: '0 小时',
+    description: '暂无数据',
     icon: 'Clock',
     bgColor: '#f6ffed',
     iconColor: '#52c41a'
   },
   {
     title: '最近观看',
-    value: 'Vue3 深入浅出',
-    description: '3 天前继续学习',
+    value: '暂无',
+    description: '暂无数据',
     icon: 'View',
     bgColor: '#f9f0ff',
     iconColor: '#722ed1'
   }
-]
+])
 
 // 课程分类
 const categories = [
@@ -163,131 +167,94 @@ const filterStatus = ref('')
 // 分页数据
 const currentPage = ref(1)
 const pageSize = ref(12)
-const totalVideos = ref(100) // 假设总共有100个视频
+const totalVideos = ref(0)
 
-// 视频列表数据（模拟后端分页数据）
-const videoList = ref([
-  {
-    id: 1,
-    title: 'Vue3 组件化开发实战',
-    thumbnail: 'https://via.placeholder.com/300x180?text=Vue3',
-    duration: 5400, // 秒
-    progress: 85,
-    status: 'in-progress',
-    category: 'frontend',
-    credits: 5
-  },
-  {
-    id: 2,
-    title: 'React Hooks 最佳实践',
-    thumbnail: 'https://via.placeholder.com/300x180?text=React',
-    duration: 4200,
-    progress: 100,
-    status: 'completed',
-    category: 'frontend',
-    credits: 4
-  },
-  {
-    id: 3,
-    title: 'Node.js 服务端开发',
-    thumbnail: 'https://via.placeholder.com/300x180?text=Node.js',
-    duration: 7200,
-    progress: 0,
-    status: 'not-started',
-    category: 'backend',
-    credits: 6
-  },
-  {
-    id: 4,
-    title: 'MySQL 数据库优化',
-    thumbnail: 'https://via.placeholder.com/300x180?text=MySQL',
-    duration: 3600,
-    progress: 30,
-    status: 'in-progress',
-    category: 'database',
-    credits: 3
-  },
-  {
-    id: 5,
-    title: 'Flutter 跨平台开发',
-    thumbnail: 'https://via.placeholder.com/300x180?text=Flutter',
-    duration: 6300,
-    progress: 0,
-    status: 'not-started',
-    category: 'mobile',
-    credits: 5
-  },
-  {
-    id: 6,
-    title: 'Python 数据分析',
-    thumbnail: 'https://via.placeholder.com/300x180?text=Python',
-    duration: 5100,
-    progress: 100,
-    status: 'completed',
-    category: 'ai',
-    credits: 4
-  },
-  {
-    id: 7,
-    title: 'Docker 容器化部署',
-    thumbnail: 'https://via.placeholder.com/300x180?text=Docker',
-    duration: 4500,
-    progress: 0,
-    status: 'not-started',
-    category: 'cloud',
-    credits: 4
-  },
-  {
-    id: 8,
-    title: 'TypeScript 高级教程',
-    thumbnail: 'https://via.placeholder.com/300x180?text=TypeScript',
-    duration: 4800,
-    progress: 50,
-    status: 'in-progress',
-    category: 'frontend',
-    credits: 5
-  },
-  {
-    id: 9,
-    title: 'Spring Boot 实战',
-    thumbnail: 'https://via.placeholder.com/300x180?text=Spring',
-    duration: 7800,
-    progress: 100,
-    status: 'completed',
-    category: 'backend',
-    credits: 6
-  },
-  {
-    id: 10,
-    title: 'MongoDB 从入门到精通',
-    thumbnail: 'https://via.placeholder.com/300x180?text=MongoDB',
-    duration: 5400,
-    progress: 0,
-    status: 'not-started',
-    category: 'database',
-    credits: 5
-  },
-  {
-    id: 11,
-    title: 'React Native 移动应用开发',
-    thumbnail: 'https://via.placeholder.com/300x180?text=React+Native',
-    duration: 6600,
-    progress: 20,
-    status: 'in-progress',
-    category: 'mobile',
-    credits: 6
-  },
-  {
-    id: 12,
-    title: 'AWS 云服务架构',
-    thumbnail: 'https://via.placeholder.com/300x180?text=AWS',
-    duration: 9000,
-    progress: 0,
-    status: 'not-started',
-    category: 'cloud',
-    credits: 8
-  },
-])
+// 视频列表数据
+const videoList = ref<Course[]>([])
+const loading = ref(false)
+
+// 初始化
+onMounted(async () => {
+  await fetchVideoList()
+  await fetchStatistics()
+})
+
+// 获取视频列表
+const fetchVideoList = async () => {
+  loading.value = true
+  try {
+    const params = {
+      page: currentPage.value,
+      pageSize: pageSize.value,
+      keyword: searchKeyword.value,
+      category: filterCategory.value,
+      status: filterStatus.value
+    }
+    const response = await learningService.getCourses(params)
+    if (response.data) {
+      videoList.value = response.data
+      totalVideos.value = response.data.length
+    }
+  } catch (error) {
+    console.error('Failed to fetch video list:', error)
+    ElMessage.error('获取视频列表失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 获取统计数据
+const fetchStatistics = async () => {
+  try {
+    const response = await learningService.getLearningProgress(0) // 获取总体学习进度
+    if (response.data && response.data.length > 0) {
+      const stats = response.data[0]
+
+      // 更新统计数据
+      statisticsData.value[0].value = `${stats.progress || 0}%`
+      statisticsData.value[0].description = stats.status === 'completed' ? '已完成' : '学习中'
+
+      statisticsData.value[1].value = `${stats.progress < 100 ? 1 : 0} 个`
+      statisticsData.value[1].description = stats.status === 'in_progress' ? '继续学习' : '暂无数据'
+
+      statisticsData.value[2].value = `${stats.progress || 0}%`
+      statisticsData.value[2].description = stats.lastPosition ? `上次学习位置: ${stats.lastPosition}` : '暂无数据'
+
+      if (stats.status === 'in_progress') {
+        statisticsData.value[3].value = '继续学习'
+        statisticsData.value[3].description = `进度: ${stats.progress}%`
+      }
+    }
+  } catch (error) {
+    console.error('Failed to fetch statistics:', error)
+  }
+}
+
+// 处理搜索
+const handleSearch = () => {
+  currentPage.value = 1
+  fetchVideoList()
+}
+
+// 处理重置
+const handleReset = () => {
+  searchKeyword.value = ''
+  filterCategory.value = ''
+  filterStatus.value = ''
+  handleSearch()
+}
+
+// 处理分页大小变化
+const handleSizeChange = (size: number) => {
+  pageSize.value = size
+  fetchVideoList()
+}
+
+// 处理页码变化
+const handleCurrentChange = (page: number) => {
+  currentPage.value = page
+  fetchVideoList()
+}
 
 // 格式化视频时长
 const formatDuration = (seconds: number) => {
@@ -311,77 +278,36 @@ const getCategoryLabel = (value: string) => {
 }
 
 // 获取状态标签样式
-const getStatusType = (status: string) => {
+const getStatusType = (status: number) => {
   switch (status) {
-    case 'completed': return 'success'
-    case 'in-progress': return 'warning'
-    case 'not-started': return 'info'
+    case 1:
+      return 'success' // 已完成
+    case 2:
+      return 'warning' // 学习中
+    case 0:
+      return 'info'    // 未开始
     default: return 'info'
   }
 }
 
 // 获取状态文本
-const getStatusText = (video: any) => {
-  switch (video.status) {
-    case 'completed': return '已完成'
-    case 'in-progress': return `已学习 ${video.progress}%`
-    case 'not-started': return '未学习'
-    default: return '未知状态'
+const getStatusText = (status: number) => {
+  switch (status) {
+    case 1:
+      return '已完成'
+    case 2:
+      return '学习中'
+    case 0:
+      return '未开始'
+    default:
+      return '未知'
   }
 }
 
-// 处理视频点击
-const handleVideoClick = (video: any) => {
-  console.log('点击视频:', video)
-  // 跳转到视频播放页面
-  router.push(`/video/${video.id}`)
+// 跳转到视频详情
+const goToVideoDetail = (id: number) => {
+  router.push(`/video/${id}`)
 }
-
-// 处理搜索
-const handleSearch = () => {
-  // 这里应该调用后端API进行搜索和筛选
-  console.log('搜索关键词:', searchKeyword.value)
-  console.log('筛选分类:', filterCategory.value)
-  console.log('筛选状态:', filterStatus.value)
-  
-  // 重置分页
-  currentPage.value = 1
-  
-  // 模拟API调用
-  fetchVideoList()
-}
-
-// 处理分页大小变化
-const handleSizeChange = (size: number) => {
-  pageSize.value = size
-  fetchVideoList()
-}
-
-// 处理页码变化
-const handleCurrentChange = (page: number) => {
-  currentPage.value = page
-  fetchVideoList()
-}
-
-// 模拟从后端获取视频列表
-const fetchVideoList = () => {
-  // 这里应该根据当前的分页、搜索和筛选条件调用后端API
-  console.log('获取视频列表:', {
-    page: currentPage.value,
-    pageSize: pageSize.value,
-    keyword: searchKeyword.value,
-    category: filterCategory.value,
-    status: filterStatus.value
-  })
-  
-  // 这里只是模拟数据，实际应该从后端获取
-  // videoList.value = ...
-}
-
-onMounted(() => {
-  // 初始加载视频列表
-  fetchVideoList()
-})
 </script>
 
 <style scoped>
@@ -522,13 +448,6 @@ onMounted(() => {
   font-size: 12px;
 }
 
-.video-progress {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-}
-
 .video-info {
   padding: 12px 0 0 0;
 }
@@ -554,8 +473,17 @@ onMounted(() => {
   font-size: 14px;
 }
 
-.video-status {
-  margin-top: 8px;
+.video-description {
+  margin-bottom: 8px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.video-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: rgba(0, 0, 0, 0.45);
+  font-size: 14px;
 }
 
 /* 分页样式 */
